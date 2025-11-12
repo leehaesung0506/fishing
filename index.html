@@ -102,7 +102,7 @@ const rawJson = document.getElementById('rawJson');
 const downloadBtn = document.getElementById('downloadBtn');
 const newsList = document.getElementById('news-list');
 
-// 뉴스 샘플 (실제 운영 시 /news API로 변경 가능)
+// 뉴스 샘플
 const sampleNews = [
   { title: "캄보디아 해외취업 사기 주의", link: "#" },
   { title: "베트남 여행 사기 사건 발생", link: "#" },
@@ -145,7 +145,7 @@ analyzeBtn.addEventListener('click', async () => {
   summary.innerHTML = details.innerHTML = rawJson.textContent = '';
 
   try {
-    const resp = await fetch('http://localhost:3000/api/check', {
+    const resp = await fetch('/api/check', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ prompt: input })
