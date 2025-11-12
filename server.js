@@ -1,3 +1,8 @@
+console.log("서버 시작");   // <-- 이거 추가
+const express = require('express');
+const app = express();
+const port = 3000;
+
 // api/check.js
 import fetch from "node-fetch";
 
