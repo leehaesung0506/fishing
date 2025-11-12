@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>해외취업·여행 사기 분석기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#0f766e;
+  --accent-2:#06b6d4;
+  --bg:#f7fafc;
+  --card:#ffffff;
+  --muted:#6b7280;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);margin:0;padding:32px; color:#0f172a;}
+.wrap{max-width:980px;margin:0 auto;}
+header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px}
+h1{margin:0;font-size:22px}
+p.lead{margin:6px 0 0;color:var(--muted)}
+.card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-top:16px}
+label{display:block;font-weight:700;margin-bottom:8px}
+select, textarea, input[type="text"]{width:100%;padding:12px;border:1px solid #e6eef0;border-radius:8px;font-size:14px}
+.controls{display:flex;gap:12px;margin-top:12px;align-items:center}
+button.primary{background:var(--accent);color:white;border:none;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:700}
+button.secondary{background:transparent;border:1px solid #e6eef0;padding:10px 14px;border-radius:10px;cursor:pointer}
+.result{margin-top:18px;padding:18px;border-radius:10px;background:#fbfdff;border:1px solid #edf7f8}
+.row{display:flex;gap:12px}
+.col{flex:1}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#ecfeff;color:#035b5b;font-weight:700;font-size:13px}
+.json-pre{background:#0b1220;color:#e6fffa;padding:12px;border-radius:8px;overflow:auto;font-family:monospace;font-size:13px}
+.muted{color:var(--muted)}
+footer{margin-top:26px;color:var(--muted);font-size:13px}
+
+/* 뉴스 배너 */
+#news-banner { background:var(--accent); color:#fff; overflow:hidden; white-space:nowrap; padding:10px; border-radius:12px; margin-bottom:16px;}
+#news-list { display:inline-block; animation: scroll 20s linear infinite; }
+#news-list li { display:inline-block; margin-right:50px; }
+#news-list a { color:#fff; text-decoration:none; font-weight:700; }
+@keyframes scroll { 0% { transform:translateX(100%);} 100% { transform:translateX(-100%);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 뉴스 배너 -->
+  <div id="news-banner">
+    <ul id="news-list"></ul>
+  </div>
+
+  <header>
+    <div class="logo">SAFE</div>
+    <div>
+      <h1>해외취업·여행 사기 분석기</h1>
+      <p class="lead">공고·링크·국가 정보를 입력하면 AI가 위험도를 분석해줍니다 — JSON 포맷으로 엄격 출력</p>
+    </div>
+  </header>
+
+  <div class="card">
+    <label for="mode">검사 유형</label>
+    <select id="mode">
+      <option value="text">1) 공고/메시지 텍스트 분석</option>
+      <option value="url">2) 링크(도메인) 신뢰도 분석</option>
+      <option value="country">3) 국가별 여행 안전도</option>
+    </select>
+
+    <div style="margin-top:12px" id="textAreaWrap">
+      <label for="inputArea">분석할 내용 (공고/메시지/URL/국가명)</label>
+      <textarea id="inputArea" placeholder="예: 캄보디아에서 월 500만원 지급, 비자·숙소 제공..."></textarea>
+    </div>
+
+    <div class="controls">
+      <button class="primary" id="analyzeBtn">🔍 AI 분석 실행</button>
+      <button class="secondary" id="sampleBtn">샘플 입력 불러오기</button>
+      <div style="margin-left:auto" class="muted">서버: <span id="serverStatus">로컬</span></div>
+    </div>
+
+    <div id="resultBox" class="result" style="display:none">
+      <div id="summary" style="margin-bottom:12px"></div>
+      <div id="details"></div>
+      <div style="margin-top:14px">
+        <button id="downloadBtn" class="secondary">📥 신고용 텍스트 다운로드</button>
+      </div>
+      <hr style="margin:14px 0;">
+      <div class="muted">원시 AI 응답 (검증용)</div>
+      <pre id="rawJson" class="json-pre" style="height:160px;overflow:auto"></pre>
+    </div>
+  </div>
+
+  <footer>학술제 데모 — 실제 운영 시 API 키/쿼터 확인 필수</footer>
+</div>
+
+<script>
+const modeEl = document.getElementById('mode');
+const inputEl = document.getElementById('inputArea');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const sampleBtn = document.getElementById('sampleBtn');
+const resultBox = document.getElementById('resultBox');
+const summary = document.getElementById('summary');
+const details = document.getElementById('details');
+const rawJson = document.getElementById('rawJson');
+const downloadBtn = document.getElementById('downloadBtn');
+const newsList = document.getElementById('news-list');
+
+// 뉴스 샘플 (실제 운영 시 /news API로 변경 가능)
+const sampleNews = [
+  { title: "캄보디아 해외취업 사기 주의", link: "#" },
+  { title: "베트남 여행 사기 사건 발생", link: "#" },
+  { title: "해외 알바 모집 허위 공고 주의", link: "#" },
+  { title: "인도네시아 여행 안전 가이드", link: "#" },
+  { title: "해외 취업 사기 예방 방법", link: "#" }
+];
+
+sampleNews.forEach(a => {
+  const li = document.createElement('li');
+  li.innerHTML = `<a href="${a.link}" target="_blank">${a.title}</a>`;
+  newsList.appendChild(li);
+});
+
+// 샘플 입력
+sampleBtn.addEventListener('click', () => {
+  const samples = {
+    text: "캄보디아 채용 공고: '월 600만원 지급, 숙소·비자 제공, 선결제 200달러' - 연락은 카카오톡으로만 진행",
+    url: "http://cheapjob-kh.example.com/apply?id=1122",
+    country: "캄보디아, 프놈펜 치안과 사기 위험성 관련"
+  };
+  inputEl.value = samples[modeEl.value] || samples.text;
+});
+
+// 모드 변경
+modeEl.addEventListener('change', () => {
+  if(modeEl.value === 'text') inputEl.placeholder = "공고문/메시지 전체를 붙여넣기 하세요.";
+  if(modeEl.value === 'url') inputEl.placeholder = "검사할 URL을 붙여넣으세요.";
+  if(modeEl.value === 'country') inputEl.placeholder = "국가명 또는 지역 입력(예: 캄보디아 시엠립).";
+});
+
+// 분석 실행
+analyzeBtn.addEventListener('click', async () => {
+  const input = inputEl.value.trim();
+  if(!input) { alert("분석할 내용을 입력하세요."); return; }
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = '분석 중... 잠시만요';
+  resultBox.style.display = 'none';
+  summary.innerHTML = details.innerHTML = rawJson.textContent = '';
+
+  try {
+    const resp = await fetch('http://localhost:3000/api/check', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt: input })
+    });
+    const data = await resp.json();
+
+    const raw = data.raw || '';
+    rawJson.textContent = raw;
+    let parsed = data.parsed || null;
+    if(!parsed) try { parsed = JSON.parse(raw); } catch(e){ parsed=null; }
+
+    if(!parsed){
+      summary.innerHTML = `<div class="badge">⚠️ 출력 형식 오류</div><div class="muted" style="margin-top:8px">AI가 JSON을 정확히 반환하지 않았습니다.</div>`;
+      details.innerHTML = `<pre style="white-space:pre-wrap">${raw}</pre>`;
+    } else {
+      summary.innerHTML = `<div style="display:flex;align-items:center;gap:12px"><div class="badge">${parsed["종합평가"]||'알수없음'}</div><div class="muted">위험도: <strong>${parsed["위험도점수"]??'N/A'}</strong>/100</div></div>`;
+      details.innerHTML = `
+        <h3 style="margin:10px 0 6px">💡 분석 근거</h3>
+        <div class="muted">${(parsed["분석근거"]||[]).map(x=>`<div>- ${x}</div>`).join('')}</div>
+        <h3 style="margin:12px 0 6px">🔒 안전 조치 제안</h3>
+        <div class="muted">${(parsed["안전조치제안"]||[]).map(x=>`<div>- ${x}</div>`).join('')}</div>
+      `;
+      downloadBtn.onclick = () => {
+        const txt = `=== 신고/보관용 리포트 ===\n종합평가: ${parsed["종합평가"]}\n위험도: ${parsed["위험도점수"]}/100\n\n분석근거:\n${(parsed["분석근거"]||[]).map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n안전조치:\n${(parsed["안전조치제안"]||[]).map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n원문:\n${input}\n`;
+        const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'report.txt';
+        link.click();
+      };
+    }
+
+    resultBox.style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    alert("서버 호출 중 오류가 발생했습니다. 콘솔 확인.");
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = '🔍 AI 분석 실행';
+  }
+});
+</script>
+</body>
+</html>
