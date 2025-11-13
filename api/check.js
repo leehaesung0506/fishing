@@ -27,6 +27,15 @@ JSON은 반드시 아래 형식으로 출력해야 해:
   "위험도점수": 0~100 (정수),
   "분석근거": ["핵심 근거 3~5개"],
   "안전조치제안": ["현실적인 조치 1~2개"]
+}
+  사용자가 입력: "캄보디아 채용 공고: 월 500만원 지급, 숙소 제공, 선결제 200달러"
+응답 예시(JSON):
+{
+  "종합평가": "주의",
+  "위험도점수": 45,
+  "분석근거": ["선결제 요구", "카카오톡 단일 연락", "과도한 월급 제시"],
+  "안전조치제안": ["현지 기관 확인", "선결제 요구는 거절"]
+}
 `;
 
   try {
@@ -37,12 +46,12 @@ JSON은 반드시 아래 형식으로 출력해야 해:
         Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-5-mini",
+        model: "gpt-4-mini",
         messages: [
           { role: "system", content: formatGuide },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.3,
+        temperature: 0.2,
         max_tokens: 500,
       }),
     });
