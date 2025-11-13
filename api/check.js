@@ -16,18 +16,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: { message: "서버 환경변수 OPENAI_API_KEY 미설정" } });
   }
 
-
   console.log(API_KEY ? "✅ OPENAI_API_KEY OK" : "❌ OPENAI_API_KEY MISSING");
 
-
-  // 강화된 시스템 프롬프트
+  // 테스트용 간단 프롬프트
   const formatGuide = `
-
-너는 친절한 AI야. 사용자가 입력한 문장에 대해 간단하게 답변해줘. 
+너는 친절한 AI야. 사용자가 입력한 문장에 대해 간단하게 답변해줘.
 출력은 일반 텍스트로 해도 돼.
 `;
 
   try {
+    // timeout 대비 wrapper
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15초 timeout
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4-mini",
+        model: "gpt-4", // 모델 변경
         messages: [
           { role: "system", content: formatGuide },
           { role: "user", content: userPrompt },
@@ -43,41 +44,30 @@ export default async function handler(req, res) {
         temperature: 0.2,
         max_tokens: 500,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     const data = await response.json();
     const raw = data?.choices?.[0]?.message?.content?.trim() || "";
 
-    let parsed = null;
-
-    // JSON 파싱 안정화
-    try {
-      // 모델이 가끔 공백, 개행 포함시도 대비
-      const clean = raw
-        .replace(/^[^\{]*/, "") // JSON 앞 불필요 문자 제거
-        .replace(/[^\}]*$/, ""); // JSON 뒤 불필요 문자 제거
-      parsed = JSON.parse(clean);
-    } catch (e) {
-      console.error("⚠️ [JSON 파싱 오류 발생]");
-      console.error("└ 오류 메시지:", e.message);
-      console.error("└ 원문 출력 시작 ↓↓↓");
-      console.error(raw);
-      console.error("└ 원문 출력 끝 ↑↑↑");
-    }
-
-    if (!parsed) {
-      console.warn("⚠️ [응답 파싱 실패] OpenAI가 JSON 형식으로 응답하지 않았을 수 있습니다.");
-    }
+    // raw 출력 로그
+    console.log("Raw AI Response:", raw);
 
     res.status(200).json({
-      success: Boolean(parsed),
+      success: Boolean(raw),
       model: data?.model || "unknown",
       usage: data?.usage || {},
       raw,
-      parsed,
     });
   } catch (err) {
-    console.error("❌ 서버 오류:", err);
-    res.status(500).json({ error: { message: err.message } });
+    if (err.name === "AbortError") {
+      console.error("❌ 서버 호출 타임아웃 발생");
+      res.status(500).json({ error: { message: "서버 호출 타임아웃" } });
+    } else {
+      console.error("❌ 서버 오류:", err);
+      res.status(500).json({ error: { message: err.message } });
+    }
   }
 }
