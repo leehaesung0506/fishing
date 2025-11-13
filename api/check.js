@@ -35,7 +35,6 @@ export default async function handler(req, res) {
 }
 
 형식을 설명하거나 예시를 출력하지 말고, 반드시 실제 JSON 객체만 출력하라. 
-
 `;
 
   try {
@@ -53,35 +52,39 @@ export default async function handler(req, res) {
         ],
         temperature: 0.2,
         max_tokens: 500,
-        // 💥 핵심 추가
         response_format: { type: "json_object" },
       }),
     });
 
     const data = await response.json();
 
-    // 모델이 항상 JSON만 반환하므로, 그대로 파싱
- const raw = data?.choices?.[0]?.message?.content?.trim() || "";
-let parsed = null;
+    const raw = data?.choices?.[0]?.message?.content?.trim() || "";
+    let parsed = null;
 
-try {
-  parsed = JSON.parse(raw);
-} catch (e) {
-  console.error("⚠️ [JSON 파싱 오류 발생]");
-  console.error("└ 오류 메시지:", e.message);
-  console.error("└ 원문 출력 시작 ↓↓↓");
-  console.error(raw);
-  console.error("└ 원문 출력 끝 ↑↑↑");
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      console.error("⚠️ [JSON 파싱 오류 발생]");
+      console.error("└ 오류 메시지:", e.message);
+      console.error("└ 원문 출력 시작 ↓↓↓");
+      console.error(raw);
+      console.error("└ 원문 출력 끝 ↑↑↑");
+    }
+
+    if (!parsed) {
+      console.warn("⚠️ [응답 파싱 실패] OpenAI가 JSON 형식으로 응답하지 않았을 수 있습니다.");
+    }
+
+    res.status(200).json({
+      success: Boolean(parsed),
+      model: data?.model || "unknown",
+      usage: data?.usage || {},
+      raw,
+      parsed,
+    });
+
+  } catch (err) {
+    console.error("❌ 서버 오류:", err);
+    res.status(500).json({ error: { message: err.message } });
+  }
 }
-
-if (!parsed) {
-  console.warn("⚠️ [응답 파싱 실패] OpenAI가 JSON 형식으로 응답하지 않았을 수 있습니다.");
-}
-
-res.status(200).json({
-  success: Boolean(parsed),
-  model: data?.model || "unknown",
-  usage: data?.usage || {},
-  raw,
-  parsed,
-});
