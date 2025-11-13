@@ -16,6 +16,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: { message: "서버 환경변수 OPENAI_API_KEY 미설정" } });
   }
 
+
+  console.log(API_KEY ? "✅ OPENAI_API_KEY OK" : "❌ OPENAI_API_KEY MISSING");
+
+  
   // 강화된 시스템 프롬프트
   const formatGuide = `
 너는 '국제 취업 및 여행 안전 분석 전문가 AI'야.
@@ -26,7 +30,7 @@ export default async function handler(req, res) {
 출력 JSON 구조:
 {
   "종합평가": "안전" | "주의" | "위험" | "스팸",
-  "위험도점수": 0~100 (정수),
+  "위험도점수": 0~100 (정수)
   "분석근거": ["구체적이고 전문가적인 판단 근거 3~5개 (이모티콘 가능)"],
   "안전조치제안": ["현실적이고 즉시 실행 가능한 조치 1~2개 (이모티콘 가능)"]
 }
