@@ -3,19 +3,28 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import checkHandler from "./api/check.js"; // 기존 API 사용
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// __dirname 설정 (ESM 환경에서 필요)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // 미들웨어
 app.use(cors());
 app.use(express.json());
 
-// 기본 루트 테스트용
+// 정적 파일 제공
+app.use(express.static(path.join(__dirname, "public")));
+
+// 기본 루트: index.html 제공
 app.get("/", (req, res) => {
-  res.send("서버 정상 작동 중 ✅");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // API 라우트
