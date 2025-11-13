@@ -15,27 +15,27 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: { message: "서버 환경변수 OPENAI_API_KEY 미설정" } });
   }
 
+  // 🧠 강화된 시스템 프롬프트
   const formatGuide = `
-너는 '국제 취업 및 여행 안전 분석 전문가 AI'야. 
-입력된 문장, 링크, 또는 국가 정보를 기반으로 사기 가능성을 판단하고, 
-오직 JSON 형식으로만 답변해. 
-그 외 문장, 설명, 코드블록은 절대 포함하지 마.
+너는 '국제 취업 및 여행 안전 분석 전문가 AI'야.  
+입력된 문장, 링크(URL), 또는 국가/지역 정보를 기반으로 사기 가능성과 안전도를 분석해.  
+너의 목표는 사용자가 현실적으로 판단하고 행동할 수 있도록 **전문가 수준의 분석 근거**를 제시하는 거야.
 
-JSON은 반드시 아래 형식으로 출력해야 해:
+⚠️ 출력은 반드시 아래 JSON 형식 그대로 해야 해.
+- 구조, 키 이름, 순서 절대 바꾸지 마.
+- JSON 바깥에는 아무 말도 하지 마.
+- 값 안에서는 상황에 맞는 이모티콘(🔒, ⚠️, 🚨, 🧨, 😊 등)을 사용할 수 있어.
+
+출력 형식:
 {
-  "종합평가": "안전" 또는 "주의" 또는 "위험",
+  "종합평가": "안전" | "주의" | "위험" | "스팸",
   "위험도점수": 0~100 (정수),
-  "분석근거": ["핵심 근거 3~5개"],
-  "안전조치제안": ["현실적인 조치 1~2개"]
+  "분석근거": ["구체적이고 전문가적인 판단 근거 3~5개 (이모티콘 가능)"],
+  "안전조치제안": ["현실적이고 즉시 실행 가능한 조치 1~2개 (이모티콘 가능)"]
 }
-  사용자가 입력: "캄보디아 채용 공고: 월 500만원 지급, 숙소 제공, 선결제 200달러"
-응답 예시(JSON):
-{
-  "종합평가": "주의",
-  "위험도점수": 45,
-  "분석근거": ["선결제 요구", "카카오톡 단일 연락", "과도한 월급 제시"],
-  "안전조치제안": ["현지 기관 확인", "선결제 요구는 거절"]
-}
+
+형식을 설명하거나 예시를 출력하지 말고, 반드시 실제 JSON 객체만 출력하라. 
+
 `;
 
   try {
@@ -53,22 +53,35 @@ JSON은 반드시 아래 형식으로 출력해야 해:
         ],
         temperature: 0.2,
         max_tokens: 500,
+        // 💥 핵심 추가
+        response_format: { type: "json_object" },
       }),
     });
 
     const data = await response.json();
-    const raw = data.choices?.[0]?.message?.content?.trim() || "";
 
-    let parsed = null;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      console.warn("⚠️ JSON 파싱 실패, 원문 그대로 반환");
-    }
+    // 모델이 항상 JSON만 반환하므로, 그대로 파싱
+ const raw = data?.choices?.[0]?.message?.content?.trim() || "";
+let parsed = null;
 
-    res.status(200).json({ raw, parsed });
-  } catch (err) {
-    console.error("❌ 서버 오류:", err);
-    res.status(500).json({ error: { message: err.message } });
-  }
+try {
+  parsed = JSON.parse(raw);
+} catch (e) {
+  console.error("⚠️ [JSON 파싱 오류 발생]");
+  console.error("└ 오류 메시지:", e.message);
+  console.error("└ 원문 출력 시작 ↓↓↓");
+  console.error(raw);
+  console.error("└ 원문 출력 끝 ↑↑↑");
 }
+
+if (!parsed) {
+  console.warn("⚠️ [응답 파싱 실패] OpenAI가 JSON 형식으로 응답하지 않았을 수 있습니다.");
+}
+
+res.status(200).json({
+  success: Boolean(parsed),
+  model: data?.model || "unknown",
+  usage: data?.usage || {},
+  raw,
+  parsed,
+});
