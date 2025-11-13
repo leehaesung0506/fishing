@@ -1,3 +1,4 @@
+// check.js
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
@@ -15,18 +16,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: { message: "서버 환경변수 OPENAI_API_KEY 미설정" } });
   }
 
-  // 🧠 강화된 시스템 프롬프트
+  // 강화된 시스템 프롬프트
   const formatGuide = `
-너는 '국제 취업 및 여행 안전 분석 전문가 AI'야.  
-입력된 문장, 링크(URL), 또는 국가/지역 정보를 기반으로 사기 가능성과 안전도를 분석해.  
-너의 목표는 사용자가 현실적으로 판단하고 행동할 수 있도록 **전문가 수준의 분석 근거**를 제시하는 거야.
+너는 '국제 취업 및 여행 안전 분석 전문가 AI'야.
+사용자가 입력한 문장, 링크(URL), 국가/지역 정보를 기반으로 사기 가능성과 안전도를 분석해.
+출력은 반드시 JSON 형식만, 바깥 텍스트 금지.
+값 안에서는 상황에 맞는 이모티콘(🔒, ⚠️, 🚨, 😊 등) 사용 가능.
 
-⚠️ 출력은 반드시 아래 JSON 형식 그대로 해야 해.
-- 구조, 키 이름, 순서 절대 바꾸지 마.
-- JSON 바깥에는 아무 말도 하지 마.
-- 값 안에서는 상황에 맞는 이모티콘(🔒, ⚠️, 🚨, 🧨, 😊 등)을 사용할 수 있어.
-
-출력 형식:
+출력 JSON 구조:
 {
   "종합평가": "안전" | "주의" | "위험" | "스팸",
   "위험도점수": 0~100 (정수),
@@ -34,7 +31,7 @@ export default async function handler(req, res) {
   "안전조치제안": ["현실적이고 즉시 실행 가능한 조치 1~2개 (이모티콘 가능)"]
 }
 
-형식을 설명하거나 예시를 출력하지 말고, 반드시 실제 JSON 객체만 출력하라. 
+JSON 외에는 아무것도 출력하지 마.
 `;
 
   try {
@@ -52,17 +49,21 @@ export default async function handler(req, res) {
         ],
         temperature: 0.2,
         max_tokens: 500,
-        response_format: { type: "json_object" },
       }),
     });
 
     const data = await response.json();
-
     const raw = data?.choices?.[0]?.message?.content?.trim() || "";
+
     let parsed = null;
 
+    // JSON 파싱 안정화
     try {
-      parsed = JSON.parse(raw);
+      // 모델이 가끔 공백, 개행 포함시도 대비
+      const clean = raw
+        .replace(/^[^\{]*/, "") // JSON 앞 불필요 문자 제거
+        .replace(/[^\}]*$/, ""); // JSON 뒤 불필요 문자 제거
+      parsed = JSON.parse(clean);
     } catch (e) {
       console.error("⚠️ [JSON 파싱 오류 발생]");
       console.error("└ 오류 메시지:", e.message);
@@ -82,7 +83,6 @@ export default async function handler(req, res) {
       raw,
       parsed,
     });
-
   } catch (err) {
     console.error("❌ 서버 오류:", err);
     res.status(500).json({ error: { message: err.message } });
