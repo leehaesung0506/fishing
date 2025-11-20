@@ -1,0 +1,200 @@
+/* ==========================
+   CSS 변수(색상 등) 설정
+   ========================== */
+:root {
+    --accent: #0f766e;
+    --accent-2: #06b6d4;
+    --bg: #f7fafc;
+    --card: #ffffff;
+    --muted: #6b7280;
+}
+
+/* ==========================
+   전체 페이지 기본 설정
+   ========================== */
+body {
+    font-family: "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 32px;
+    color: #0f172a;
+}
+
+/* 전체 레이아웃 폭 조절 */
+.wrap {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+/* ==========================
+   헤더 영역
+   ========================== */
+header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+/* 로고 박스 */
+.logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+/* 제목 */
+h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+/* 작은 설명문 */
+p.lead {
+    margin: 6px 0 0;
+    color: var(--muted);
+}
+
+/* ==========================
+   카드(Card) 박스(입력 UI)
+   ========================== */
+.card {
+    background: var(--card);
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+    margin-top: 16px;
+}
+
+/* 라벨 */
+label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+/* 입력창 스타일 */
+select,
+textarea,
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e6eef0;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* 버튼 컨트롤 그룹 */
+.controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    align-items: center;
+}
+
+/* 기본 버튼 스타일 */
+button.primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+button.secondary {
+    background: transparent;
+    border: 1px solid #e6eef0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* ==========================
+   결과 박스(분석 결과)
+   ========================== */
+.result {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 10px;
+    background: #fbfdff;
+    border: 1px solid #edf7f8;
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+}
+.col {
+    flex: 1;
+}
+
+/* 뱃지 표시 */
+.badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #ecfeff;
+    color: #035b5b;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+/* 푸터 */
+footer {
+    margin-top: 26px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* ==========================
+   상단 뉴스 배너 영역(스크롤)
+   ========================== */
+#news-banner {
+    background: var(--accent);
+    color: #fff;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+/* 뉴스 리스트 */
+#news-list {
+    display: inline-block;
+    animation: scroll 20s linear infinite; /* 자동 왼쪽으로 흐르는 효과 */
+}
+
+#news-list li {
+    display: inline-block;
+    margin-right: 50px;
+}
+
+#news-list a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+/* 스크롤 애니메이션 */
+@keyframes scroll {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}

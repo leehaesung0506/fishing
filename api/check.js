@@ -8,11 +8,13 @@ export default async function handler(req, res) {
 
   const userPrompt = req.body.prompt;
   if (!userPrompt) {
+    console.error("No prompt");
     return res.status(400).json({ error: { message: "입력값이 없습니다." } });
   }
 
   const API_KEY = process.env.OPENAI_API_KEY;
   if (!API_KEY) {
+    console.error("Missing API key");
     return res.status(500).json({ error: { message: "서버 환경변수 OPENAI_API_KEY 미설정" } });
   }
 
