@@ -45,13 +45,63 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4", // 모델 변경
-        messages: [
-          { role: "system", content: formatGuide },
-          { role: "user", content: userPrompt },
+        "model": "gpt-4",
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "safety_analysis_response",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "종합평가": {
+                  "type": "string",
+                  "enum": ["안전", "주의", "위험", "스팸"]
+                },
+                "위험도점수": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "분석근거": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 3,
+                  "maxItems": 5
+                },
+                "안전조치제안": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "maxItems": 2
+                }
+              },
+              "required": [
+                "종합평가",
+                "위험도점수",
+                "분석근거",
+                "안전조치제안"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": formatGuide
+          },
+          {
+            "role": "user",
+            "content": userPrompt
+          }
         ],
-        temperature: 0.2,
-        max_tokens: 500,
+        "temperature": 0.2,
+        "max_tokens": 500
       }),
       signal: controller.signal,
     });
@@ -59,16 +109,16 @@ export default async function handler(req, res) {
     clearTimeout(timeout);
 
     const data = await response.json();
-    const raw = data?.choices?.[0]?.message?.content?.trim() || "";
+    const result = data?.choices?.[0]?.message?.content;
 
-    // raw 출력 로그
-    console.log("Raw AI Response:", raw);
+    // 응답 출력 로그
+    console.log("Raw AI Response:", result);
 
     res.status(200).json({
-      success: Boolean(raw),
+      success: Boolean(result),
       model: data?.model || "unknown",
       usage: data?.usage || {},
-      raw,
+      result: JSON.stringify(result),
     });
   } catch (err) {
     if (err.name === "AbortError") {
