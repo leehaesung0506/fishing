@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
-        "model": "gpt-4",
+        "model": "gpt-4.1",
         "response_format": {
           "type": "json_schema",
           "json_schema": {
