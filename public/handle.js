@@ -78,7 +78,9 @@ analyzeBtn.addEventListener("click", async () => {
         });
 
         const data = await resp.json();
+        console.log("data: ", data);
         const parsed = JSON.parse(data.result);
+        console.log("parsed: ", parsed);
 
         {
             summary.innerHTML = `
