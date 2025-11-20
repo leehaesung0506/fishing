@@ -121,7 +121,7 @@ export default async function handler(req, res) {
       success: Boolean(result),
       model: data?.model || "unknown",
       usage: data?.usage || {},
-      result: JSON.stringify( result: result),
+      result: result,
     });
   } catch (err) {
     if (err.name === "AbortError") {
